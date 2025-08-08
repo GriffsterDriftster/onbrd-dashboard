@@ -1,0 +1,5 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root{color-scheme:light dark}
+:focus-visible{outline:3px solid #0b468c;outline-offset:2px}

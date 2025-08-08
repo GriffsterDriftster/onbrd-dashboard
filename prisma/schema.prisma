@@ -1,0 +1,73 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "sqlite"; url = env("DATABASE_URL") }
+
+model Client {
+  id            String         @id @default(cuid())
+  name          String
+  createdAt     DateTime       @default(now())
+  conversations Conversation[]
+  memberships   Membership[]
+  invites       PendingInvite[]
+  subscription  Subscription?
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  userId    String   // Clerk user id
+  clientId  String
+  role      String   @default("member") // member | admin
+  createdAt DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id])
+
+  @@unique([userId, clientId])
+  @@index([userId])
+}
+
+model PendingInvite {
+  id        String   @id @default(cuid())
+  clientId  String
+  email     String
+  role      String   @default("member")
+  token     String   @unique
+  createdAt DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id])
+}
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  clientId             String   @unique
+  stripeCustomerId     String
+  stripeSubscriptionId String
+  status               String
+  priceId              String
+  currentPeriodEnd     DateTime
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  client               Client   @relation(fields: [clientId], references: [id])
+}
+
+model Conversation {
+  id                   String   @id @default(cuid())
+  clientId             String
+  client               Client   @relation(fields: [clientId], references: [id])
+  startedAt            DateTime
+  resolvedAt           DateTime?
+  resolvedBy           String
+  escalated            Boolean  @default(false)
+  firstResponseSeconds Int      @default(0)
+  leadCaptured         Boolean  @default(false)
+  csat                 Int?
+  costCents            Int      @default(0)
+  messages             Message[]
+  dayKey               String   @default("")
+
+  @@index([clientId, dayKey])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String
+  createdAt      DateTime @default(now())
+  Conversation   Conversation @relation(fields: [conversationId], references: [id])
+}
